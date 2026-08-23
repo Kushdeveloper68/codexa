@@ -32,9 +32,9 @@ export default function ResultsPage() {
       <header className="bg-surface border-b border-surface-variant flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop h-16">
         <Link to="/" className="font-headline-md text-headline-md font-bold text-primary">CodeClass</Link>
       </header>
-      <main className="max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-gutter">
-        <div className="mb-8">
-          <h1 className="font-headline-lg text-headline-lg text-on-background mb-2">{data.room.title} — Results</h1>
+      <main className="max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-6 md:py-gutter">
+        <div className="mb-6 md:mb-8">
+          <h1 className="font-headline-lg text-[22px] md:text-headline-lg text-on-background mb-2 break-words">{data.room.title} — Results</h1>
           <p className="font-body-lg text-body-lg text-on-surface-variant">
             {data.submittedCount} of {data.totalStudents} students submitted
           </p>
@@ -45,13 +45,13 @@ export default function ResultsPage() {
             <div key={s.sessionId}>
               <button
                 onClick={() => setExpanded(expanded === s.sessionId ? null : s.sessionId)}
-                className="w-full flex items-center justify-between px-6 py-4 hover:bg-surface-bright transition-colors text-left"
+                className="w-full flex flex-wrap items-center justify-between gap-2 px-4 md:px-6 py-3 md:py-4 hover:bg-surface-bright transition-colors text-left"
               >
-                <div className="flex items-center gap-3">
-                  <span className="font-body-sm text-body-sm font-medium text-on-surface">{s.name}</span>
-                  {s.rollNumber && <span className="font-code-sm text-code-sm text-secondary">{s.rollNumber}</span>}
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="font-body-sm text-body-sm font-medium text-on-surface truncate">{s.name}</span>
+                  {s.rollNumber && <span className="font-code-sm text-code-sm text-secondary shrink-0">{s.rollNumber}</span>}
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 md:gap-4 shrink-0">
                   <StatusBadge status={s.submitted ? "SUBMITTED" : "NOT_STARTED"} />
                   <span className="material-symbols-outlined text-secondary">
                     {expanded === s.sessionId ? "expand_less" : "expand_more"}
@@ -59,12 +59,12 @@ export default function ResultsPage() {
                 </div>
               </button>
               {expanded === s.sessionId && (
-                <div className="px-6 pb-6 space-y-4">
+                <div className="px-4 md:px-6 pb-4 md:pb-6 space-y-4">
                   {s.submissions.length === 0 && (
                     <p className="font-body-sm text-body-sm text-secondary">No code submitted.</p>
                   )}
                   {s.submissions.map((sub, i) => (
-                    <div key={i} className="bg-[#1e1e1e] rounded-lg p-4 overflow-x-auto">
+                    <div key={i} className="bg-[#1e1e1e] rounded-lg p-3 md:p-4 overflow-x-auto">
                       <pre className="font-code-sm text-code-sm text-[#d4d4d4]">{sub.code || "// empty"}</pre>
                     </div>
                   ))}

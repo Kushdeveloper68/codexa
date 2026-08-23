@@ -65,7 +65,7 @@ export default function CreateTestRoomPage() {
   return (
     <div className="bg-background text-on-background min-h-screen flex flex-col font-body-sm">
       <Navbar />
-      <main className="flex-grow flex flex-col items-center justify-center p-margin-mobile md:p-margin-desktop py-16">
+      <main className="flex-grow flex flex-col items-center justify-center p-margin-mobile md:p-margin-desktop py-8 md:py-16">
         <div className="w-full max-w-2xl bg-surface-container-lowest border border-surface-variant rounded-xl shadow-sm p-6 md:p-8">
           <div className="mb-8">
             <h1 className="font-headline-lg text-headline-lg text-on-background mb-2">Create Test Room</h1>

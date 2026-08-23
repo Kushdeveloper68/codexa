@@ -3,6 +3,8 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import RoomCodeBadge from "../components/RoomCodeBadge";
 import CodeEditorPanel from "../components/CodeEditorPanel";
 import ErrorState from "../components/ErrorState";
+import MembersList from "../components/MembersList";
+import ChatPanel from "../components/ChatPanel";
 import { roomService, classroomService } from "../services/roomService";
 import { useRoomSocket } from "../hooks/useRoomSocket";
 import { useDebouncedCallback } from "../hooks/useDebouncedCallback";
@@ -23,6 +25,13 @@ export default function StudentClassroomPage() {
   const [connectionState, setConnectionState] = useState("connected");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Mobile-only slide-over drawer: hidden entirely on md+ where both
+  // panels are always visible side by side.
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerTab, setDrawerTab] = useState("chat");
+  const [unreadCount, setUnreadCount] = useState(0);
+
   const chatEndRef = useRef(null);
   const applyingRemoteChange = useRef(false);
   const codeHasContentRef = useRef(false);
@@ -69,7 +78,12 @@ export default function StudentClassroomPage() {
       setCode(payload.code);
     };
     const onLanguageUpdate = (payload) => setLanguage(payload.language);
-    const onChatMessage = (msg) => setMessages((prev) => [...prev, msg]);
+    const onChatMessage = (msg) => {
+      setMessages((prev) => [...prev, msg]);
+      // If the mobile drawer isn't open on the chat tab, badge it so the
+      // student notices without the chat stealing focus from the editor.
+      setUnreadCount((prev) => (drawerOpen && drawerTab === "chat" ? prev : prev + 1));
+    };
     const onDisconnect = () => setConnectionState("reconnecting");
     const onConnect = () => setConnectionState("connected");
     const refreshMembers = () => classroomService.members(code).then((r) => setMembers(r.members));
@@ -93,11 +107,18 @@ export default function StudentClassroomPage() {
       socket.off("student:disconnected", refreshMembers);
       socket.off("student:reconnected", refreshMembers);
     };
-  }, [socket, code]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket, code, drawerOpen, drawerTab]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const openDrawer = (tab) => {
+    setDrawerTab(tab);
+    setDrawerOpen(true);
+    if (tab === "chat") setUnreadCount(0);
+  };
 
   // Broadcast local edits, throttled, unless the change came from a remote
   // update (avoids feedback loops).
@@ -166,86 +187,132 @@ export default function StudentClassroomPage() {
           Connection interrupted — reconnecting...
         </div>
       )}
-      <header className="bg-surface border-b border-surface-variant flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop h-16 shrink-0">
+      <header className="bg-surface border-b border-surface-variant flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop h-14 md:h-16 shrink-0">
         <Link to="/" className="font-headline-md text-headline-md font-bold text-primary">CodeClass</Link>
       </header>
 
-      <main className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        <section className="flex-1 flex flex-col border-r border-surface-variant min-h-0">
-          <div className="h-14 border-b border-surface-variant bg-surface-container-lowest flex items-center justify-between px-4 md:px-6 gap-3 shrink-0 flex-wrap">
-            <div className="flex items-center gap-3 min-w-0">
+      <main className="flex-1 flex overflow-hidden relative">
+        <section className="flex-1 flex flex-col min-h-0 min-w-0">
+          <div className="h-auto md:h-14 border-b border-surface-variant bg-surface-container-lowest flex flex-col md:flex-row md:items-center justify-between px-3 md:px-6 gap-2 md:gap-3 shrink-0 py-2 md:py-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <button
+                onClick={() => openDrawer("members")}
+                className="md:hidden shrink-0 w-9 h-9 flex items-center justify-center rounded-DEFAULT hover:bg-surface-container text-on-surface"
+                aria-label="Open menu"
+              >
+                <span className="material-symbols-outlined">menu</span>
+              </button>
               <h1 className="font-headline-md text-headline-md text-on-surface truncate">{room?.title}</h1>
               <RoomCodeBadge code={code} size="sm" />
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 justify-between md:justify-end">
               <select
                 value={language}
                 onChange={(e) => handleLanguageChange(e.target.value)}
-                className="bg-surface border border-outline-variant rounded-DEFAULT px-2 py-1.5 font-label-caps text-label-caps text-on-surface outline-none focus:border-primary"
+                className="bg-surface border border-outline-variant rounded-DEFAULT px-2 py-1.5 font-label-caps text-label-caps text-on-surface outline-none focus:border-primary shrink-0"
               >
                 {SUPPORTED_LANGUAGES.map((l) => (
                   <option key={l} value={l}>{l}</option>
                 ))}
               </select>
-              <div className="flex items-center gap-2 px-3 py-1 bg-secondary-container/30 text-on-secondary-container rounded-full border border-secondary-container">
+
+              {/* Desktop-only static member pill */}
+              <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-secondary-container/30 text-on-secondary-container rounded-full border border-secondary-container">
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
                 <span className="font-label-caps text-label-caps whitespace-nowrap">{members.length} Members</span>
               </div>
+
+              {/* Mobile-only chat trigger with unread badge */}
+              <button
+                onClick={() => openDrawer("chat")}
+                className="md:hidden relative w-9 h-9 flex items-center justify-center rounded-DEFAULT hover:bg-surface-container text-on-surface shrink-0"
+                aria-label="Open chat"
+              >
+                <span className="material-symbols-outlined">chat</span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-error text-on-error text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
           <CodeEditorPanel value={code_} onChange={handleCodeChange} language={language} />
         </section>
 
-        <aside className="w-full md:w-80 bg-surface flex flex-col shrink-0 max-h-[45vh] md:max-h-none">
+        {/* Desktop sidebar — always visible md+ */}
+        <aside className="hidden md:flex md:w-80 bg-surface flex-col shrink-0">
           <div className="h-1/2 flex flex-col border-b border-surface-variant min-h-0">
             <div className="px-4 py-3 border-b border-surface-variant bg-surface-container-lowest shrink-0">
               <h2 className="font-label-caps text-label-caps text-secondary">Students ({members.length})</h2>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {members.map((m) => (
-                <div key={m.sessionId} className="flex items-center justify-between pb-2 border-b border-surface-variant/50 last:border-0">
-                  <span className="font-body-sm text-body-sm text-on-surface">
-                    {m.name} {m.sessionId === session?.sessionId ? "(You)" : ""}
-                  </span>
-                  <span className={`w-2 h-2 rounded-full ${m.status === "DISCONNECTED" ? "bg-surface-variant" : "bg-emerald-500"}`} />
-                </div>
-              ))}
-            </div>
+            <MembersList members={members} currentSessionId={session?.sessionId} />
           </div>
-
           <div className="h-1/2 flex flex-col min-h-0">
             <div className="px-4 py-3 border-b border-surface-variant bg-surface-container-lowest shrink-0">
               <h2 className="font-label-caps text-label-caps text-secondary">Live Chat</h2>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-surface-container-lowest">
-              {messages.map((m, i) => (
-                <div key={i}>
-                  <div className="flex items-baseline gap-2 mb-1">
-                    <span className="font-body-sm text-body-sm font-semibold text-on-surface">{m.senderName}</span>
-                    <span className="text-[10px] text-secondary">
-                      {new Date(m.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                  </div>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">{m.message}</p>
-                </div>
-              ))}
-              <div ref={chatEndRef} />
-            </div>
-            <form onSubmit={handleSendMessage} className="p-4 border-t border-surface-variant bg-surface shrink-0">
-              <div className="relative">
-                <input
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="Type a message..."
-                  className="w-full bg-surface-container-lowest border border-surface-variant rounded-DEFAULT py-2 pl-3 pr-10 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none font-body-sm text-body-sm text-on-surface placeholder:text-outline"
-                />
-                <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 text-primary hover:text-primary-container">
-                  <span className="material-symbols-outlined text-[20px]">send</span>
-                </button>
-              </div>
-            </form>
+            <ChatPanel
+              messages={messages}
+              chatInput={chatInput}
+              onInputChange={setChatInput}
+              onSend={handleSendMessage}
+              chatEndRef={chatEndRef}
+            />
           </div>
         </aside>
+
+        {/* Mobile slide-over drawer — editor stays full-screen behind it */}
+        {drawerOpen && (
+          <div className="md:hidden fixed inset-0 z-50 flex justify-end">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setDrawerOpen(false)} />
+            <div className="relative w-[85%] max-w-xs bg-surface h-full shadow-xl flex flex-col">
+              <div className="flex border-b border-surface-variant shrink-0">
+                <button
+                  onClick={() => setDrawerTab("members")}
+                  className={`flex-1 px-4 py-3 flex items-center justify-center gap-2 font-label-caps text-label-caps transition-colors ${
+                    drawerTab === "members" ? "text-primary border-b-2 border-primary" : "text-secondary"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[18px]">group</span>
+                  Students ({members.length})
+                </button>
+                <button
+                  onClick={() => {
+                    setDrawerTab("chat");
+                    setUnreadCount(0);
+                  }}
+                  className={`flex-1 px-4 py-3 flex items-center justify-center gap-2 font-label-caps text-label-caps transition-colors relative ${
+                    drawerTab === "chat" ? "text-primary border-b-2 border-primary" : "text-secondary"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[18px]">chat</span>
+                  Chat
+                </button>
+                <button
+                  onClick={() => setDrawerOpen(false)}
+                  className="px-3 flex items-center justify-center text-secondary hover:text-on-surface"
+                  aria-label="Close menu"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+              <div className="flex-1 flex flex-col min-h-0">
+                {drawerTab === "members" ? (
+                  <MembersList members={members} currentSessionId={session?.sessionId} />
+                ) : (
+                  <ChatPanel
+                    messages={messages}
+                    chatInput={chatInput}
+                    onInputChange={setChatInput}
+                    onSend={handleSendMessage}
+                    chatEndRef={chatEndRef}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

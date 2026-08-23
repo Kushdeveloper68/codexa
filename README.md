@@ -48,13 +48,48 @@ Client starts on `http://localhost:5173`.
 - Room creation (Test + Classroom), server-authoritative room codes, TTL-based expiration
 - No-login sessions: teacher gets an httpOnly cookie token scoped to the room; students get an httpOnly session cookie — the room code alone never grants teacher control
 - Student join flow (name + optional roll number, no account)
-- Test room: questions, server-authoritative timer (`testStartedAt`/`testEndsAt`), debounced autosave, submit with confirmation
-- Teacher dashboard: real-time student table, live summary cards, live activity feed — all driven by actual DB state via Socket.IO, nothing hardcoded
-- Anti-cheat activity monitoring: fullscreen exit, page visibility, paste/copy/cut, multi-tab detection (via BroadcastChannel) — all reported as neutral "activity detected" signals, never labeled as cheating; teacher makes the final call
-- Classroom: live code sync (debounced/throttled broadcast) + real-time chat + presence
+- Classroom creator is automatically also a participant (no redundant re-join step)
+- Classroom: live code sync (debounced/throttled broadcast), live language switcher with starter snippets per language, real-time chat, presence
+- Test room: questions, server-authoritative timer, debounced autosave, **Run Code** (sandboxed execution — self-hosted Piston or JDoodle, see below), submit with confirmation
+- Teacher dashboard: real-time student table with **per-type warning breakdown** (not just a count), student detail slide-over with full activity timeline, live **Code Runs** feed showing what each student ran and its output, live activity feed — 5s polling fallback on top of sockets so it never goes stale
+- Anti-cheat activity monitoring: fullscreen exit, page visibility, multi-tab detection (BroadcastChannel), and **copy/paste/cut detection wired directly into the Monaco editor** (`editor.onDidPaste` + capture-phase copy/cut listeners on the editor's DOM node — more reliable than a generic `document` listener, which Monaco's internal clipboard handling can bypass). All reported as neutral "activity detected" signals, never labeled as cheating; teacher makes the final call
 - Reconnection handling: 8s grace period before a student is marked `DISCONNECTED`, local draft cache so in-progress code survives a refresh or network blip
 - Results view: submission status + submitted code, no fabricated scores
-- Security: Helmet, CORS, rate limiting, zod validation on every mutating endpoint, mongo-sanitize, server-side permission checks on every teacher/student action (never trusts a client-declared role)
+- Security: Helmet, CORS, rate limiting (including a tighter limiter on code execution), zod validation on every mutating endpoint, mongo-sanitize, server-side permission checks on every teacher/student action
+
+### Run Code — how it actually executes
+
+This server **never runs student code itself** (no `eval()`, no `child_process`). That's a deliberate security boundary: safely sandboxing arbitrary untrusted code needs real CPU/memory limits, filesystem isolation, and no network access — getting that wrong turns "Run Code" into a remote-code-execution hole in your server.
+
+Instead, `POST /api/test/:code/run` proxies to an external sandboxed execution provider, chosen via `CODE_EXEC_PROVIDER` in `server/.env`:
+
+**Option A — self-hosted Piston (recommended: free forever, no key, no card, no rate limit)**
+
+As of Feb 2026, [Piston](https://github.com/engineer-man/piston)'s public demo API is whitelist-only, so you run your own instance:
+
+```bash
+git clone https://github.com/engineer-man/piston
+cd piston/docker-compose
+docker compose up -d
+```
+
+Then in `server/.env`:
+```
+CODE_EXEC_PROVIDER=piston
+PISTON_URL=http://localhost:2000/api/v2/piston
+```
+
+**Option B — JDoodle (no self-hosting, free signup, no card on their free tier)**
+
+Sign up at [jdoodle.com/compiler-api](https://www.jdoodle.com/compiler-api) with just an email, grab your Client ID/Secret from the dashboard, then in `server/.env`:
+```
+CODE_EXEC_PROVIDER=jdoodle
+JDOODLE_CLIENT_ID=your_client_id
+JDOODLE_CLIENT_SECRET=your_client_secret
+```
+Free tier is capped at 200 executions/day — fine for a classroom, not for large-scale use. (Third-party services change their terms over time — double-check at signup that no card is required before proceeding.)
+
+Without either configured, "Run Code" returns a clean error to the student ("Code execution isn't configured yet") and logs the exact reason to your server console — everything else in the app still works.
 
 ## What's next (not yet built)
 

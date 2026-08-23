@@ -29,6 +29,17 @@ const SubmissionSchema = new Schema(
     // final submit so autosave and submit are clearly distinguishable.
     lastSavedAt: { type: Date, default: Date.now },
     submittedAt: { type: Date, default: null },
+
+    // Most recent "Run Code" result for this (student, question) pair.
+    // Overwritten on every run — this is a live scratchpad, not a history.
+    lastRun: {
+      stdout: { type: String, default: "" },
+      stderr: { type: String, default: "" },
+      compileOutput: { type: String, default: "" },
+      status: { type: String, default: null },
+      time: { type: String, default: null },
+      ranAt: { type: Date, default: null },
+    },
   },
   { timestamps: true }
 );

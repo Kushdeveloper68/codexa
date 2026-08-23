@@ -5,6 +5,7 @@ import CodeEditorPanel from "../components/CodeEditorPanel";
 import SaveStatus from "../components/SaveStatus";
 import Button from "../components/Button";
 import ErrorState from "../components/ErrorState";
+import OutputPanel from "../components/OutputPanel";
 import { roomService, testService } from "../services/roomService";
 import { useRoomSocket } from "../hooks/useRoomSocket";
 import { useActivityMonitoring } from "../hooks/useActivityMonitoring";
@@ -26,6 +27,10 @@ export default function StudentTestRoomPage() {
   const [confirmingSubmit, setConfirmingSubmit] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showOutput, setShowOutput] = useState(false);
+  const [runResult, setRunResult] = useState(null);
+  const [runError, setRunError] = useState(null);
+  const [running, setRunning] = useState(false);
 
   const session = getLocalSession(code);
   const currentQuestion = questions[currentIndex];
@@ -128,6 +133,11 @@ export default function StudentTestRoomPage() {
             title: "Multiple tabs detected",
             message: "This test should only be open in one tab.",
           });
+        } else if (eventType === "PASTE_ATTEMPT") {
+          setWarningBanner({
+            title: "Paste detected",
+            message: "Pasting into the editor has been recorded and is visible to your instructor.",
+          });
         }
         return res;
       } catch {
@@ -158,6 +168,27 @@ export default function StudentTestRoomPage() {
       setSubmitted(true);
     } catch (err) {
       setError(err);
+    }
+  };
+
+  // --- Run code (executed remotely via Judge0, never in-browser or on
+  // this server directly) ---
+  const handleRunCode = async () => {
+    if (!currentQuestion) return;
+    setShowOutput(true);
+    setRunning(true);
+    setRunError(null);
+    try {
+      const { result } = await testService.run(code, {
+        questionId: currentQuestion.id,
+        code: codeByQuestion[currentQuestion.id] ?? "",
+      });
+      setRunResult(result);
+    } catch (err) {
+      setRunResult(null);
+      setRunError(err.message || "Could not run code");
+    } finally {
+      setRunning(false);
     }
   };
 
@@ -211,14 +242,18 @@ export default function StudentTestRoomPage() {
         </div>
       )}
       {warningBanner && (
-        <div className="bg-error-container text-on-error-container px-4 py-2 flex items-center justify-between">
-          <div>
+        <div className="bg-error-container text-on-error-container px-3 md:px-4 py-2 flex flex-wrap items-center justify-between gap-2">
+          <div className="min-w-0">
             <p className="font-body-sm text-body-sm font-semibold">{warningBanner.title}</p>
             <p className="font-body-sm text-body-sm">{warningBanner.message}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {room?.settings?.fullscreenRequired && (
-              <Button variant="secondary" onClick={() => { requestFullscreen(); setWarningBanner(null); }}>
+              <Button
+                variant="secondary"
+                onClick={() => { requestFullscreen(); setWarningBanner(null); }}
+                className="px-3 py-2 text-[11px] md:text-label-caps whitespace-nowrap"
+              >
                 Return to Fullscreen
               </Button>
             )}
@@ -229,9 +264,9 @@ export default function StudentTestRoomPage() {
         </div>
       )}
 
-      <header className="h-16 shrink-0 bg-surface border-b border-surface-variant flex items-center justify-between px-gutter">
-        <h1 className="font-headline-md text-headline-md text-on-surface truncate">{room?.title}</h1>
-        <div className="flex items-center gap-4 md:gap-8">
+      <header className="h-16 shrink-0 bg-surface border-b border-surface-variant flex items-center justify-between gap-2 px-3 md:px-gutter">
+        <h1 className="font-headline-md text-[15px] md:text-headline-md text-on-surface truncate min-w-0">{room?.title}</h1>
+        <div className="flex items-center gap-2 md:gap-8 shrink-0">
           <Timer endsAt={room?.testEndsAt} onExpire={handleSubmit} />
         </div>
       </header>
@@ -244,7 +279,7 @@ export default function StudentTestRoomPage() {
                 Question {currentIndex + 1} of {questions.length}
               </span>
               {questions.length > 1 && (
-                <div className="flex gap-1">
+                <div className="flex flex-wrap gap-1">
                   {questions.map((q, i) => (
                     <button
                       key={q.id}
@@ -268,18 +303,47 @@ export default function StudentTestRoomPage() {
           </div>
         </div>
 
-        <CodeEditorPanel
-          value={currentQuestion ? codeByQuestion[currentQuestion.id] ?? "" : ""}
-          onChange={handleCodeChange}
-          language={room?.language}
-        />
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+          <CodeEditorPanel
+            value={currentQuestion ? codeByQuestion[currentQuestion.id] ?? "" : ""}
+            onChange={handleCodeChange}
+            language={room?.language}
+            onPasteAttempt={() => reportActivity("PASTE_ATTEMPT")}
+            onCopyAttempt={() => reportActivity("COPY_ATTEMPT")}
+            onCutAttempt={() => reportActivity("CUT_ATTEMPT")}
+          />
+          {showOutput && (
+            <OutputPanel
+              result={runResult}
+              loading={running}
+              error={runError}
+              onClose={() => setShowOutput(false)}
+            />
+          )}
+        </div>
       </main>
 
-      <footer className="h-16 shrink-0 bg-surface border-t border-surface-variant flex items-center justify-between px-gutter">
+      <footer className="min-h-16 shrink-0 bg-surface border-t border-surface-variant flex flex-wrap items-center justify-between gap-2 px-3 md:px-gutter py-2">
         <SaveStatus state={connectionState === "reconnecting" ? "offline" : saveState} />
-        <div className="flex gap-4">
-          <Button variant="danger" icon="send" onClick={() => setConfirmingSubmit(true)}>
-            Submit Test
+        <div className="flex gap-2 md:gap-4">
+          <Button
+            variant="secondary"
+            icon="play_arrow"
+            onClick={handleRunCode}
+            loading={running}
+            className="px-3 md:px-6 py-2 md:py-3 text-[11px] md:text-label-caps"
+          >
+            <span className="md:hidden">Run</span>
+            <span className="hidden md:inline">Run Code</span>
+          </Button>
+          <Button
+            variant="danger"
+            icon="send"
+            onClick={() => setConfirmingSubmit(true)}
+            className="px-3 md:px-6 py-2 md:py-3 text-[11px] md:text-label-caps"
+          >
+            <span className="md:hidden">Submit</span>
+            <span className="hidden md:inline">Submit Test</span>
           </Button>
         </div>
       </footer>

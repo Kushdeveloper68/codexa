@@ -2,7 +2,8 @@ import { Router } from "express";
 import { resolveRoom } from "../middleware/resolveRoom.js";
 import { requireTeacher } from "../middleware/requireTeacher.js";
 import { requireStudent } from "../middleware/requireStudent.js";
-import { validateBody, submitCodeSchema, activityEventSchema } from "../utils/validation.js";
+import { validateBody, submitCodeSchema, activityEventSchema, runCodeSchema } from "../utils/validation.js";
+import { runCodeLimiter } from "../middleware/rateLimiters.js";
 import {
   startTest,
   endTest,
@@ -16,6 +17,7 @@ import {
   submitTest,
   recordActivity,
   getMySubmissions,
+  runCode,
 } from "../controllers/studentTestController.js";
 
 const router = Router();
@@ -32,6 +34,7 @@ router.get("/:code/results", resolveRoom, requireTeacher, getResults);
 // cookie for this room.
 router.get("/:code/questions", resolveRoom, requireStudent, getQuestions);
 router.put("/:code/save", resolveRoom, requireStudent, validateBody(submitCodeSchema), saveCode);
+router.post("/:code/run", resolveRoom, requireStudent, runCodeLimiter, validateBody(runCodeSchema), runCode);
 router.post("/:code/submit", resolveRoom, requireStudent, submitTest);
 router.post("/:code/activity", resolveRoom, requireStudent, validateBody(activityEventSchema), recordActivity);
 router.get("/:code/my-submissions", resolveRoom, requireStudent, getMySubmissions);

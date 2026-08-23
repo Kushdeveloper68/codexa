@@ -3,6 +3,7 @@ import Question from "../models/Question.js";
 import StudentSession from "../models/StudentSession.js";
 import ActivityEvent from "../models/ActivityEvent.js";
 import { asyncHandler, ValidationError } from "../utils/errors.js";
+import { executeCode } from "../services/codeExecutionService.js";
 
 const SEVERITY_BY_EVENT = {
   FULLSCREEN_EXITED: "MEDIUM",
@@ -146,6 +147,58 @@ export const recordActivity = asyncHandler(async (req, res) => {
   });
 
   res.json({ recorded: true, warningCount, warningsByType });
+});
+
+/**
+ * POST /api/test/:code/run
+ * Executes the student's current code via the external sandboxed Piston
+ * service (see codeExecutionService) and relays the result — this server
+ * never runs the code itself. Also broadcasts the run to the teacher
+ * dashboard in real time and persists the latest result on the
+ * submission doc so it's visible in the student detail panel later.
+ */
+export const runCode = asyncHandler(async (req, res) => {
+  const room = req.room;
+  const student = req.studentSession;
+  const { questionId, code, stdin } = req.body;
+
+  const question = await Question.findOne({ _id: questionId, roomId: room._id });
+  if (!question) throw ValidationError("Question not found in this room");
+
+  const result = await executeCode({ language: room.language, sourceCode: code, stdin });
+
+  await Submission.findOneAndUpdate(
+    { roomId: room._id, studentSessionId: student.sessionId, questionId },
+    {
+      $set: {
+        lastRun: {
+          stdout: result.stdout,
+          stderr: result.stderr,
+          compileOutput: result.compileOutput,
+          status: result.status,
+          time: result.time,
+          ranAt: new Date(),
+        },
+      },
+    },
+    { upsert: true }
+  );
+
+  const io = req.app.get("io");
+  io?.to(`room:${room.code}`).emit("code:run", {
+    sessionId: student.sessionId,
+    name: student.name,
+    questionId,
+    questionOrder: question.order,
+    stdout: result.stdout,
+    stderr: result.stderr,
+    compileOutput: result.compileOutput,
+    status: result.status,
+    time: result.time,
+    timestamp: new Date(),
+  });
+
+  res.json({ result });
 });
 
 /**

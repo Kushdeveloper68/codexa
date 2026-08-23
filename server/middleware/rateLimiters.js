@@ -19,6 +19,17 @@ export const joinRoomLimiter = rateLimit({
   message: { error: { code: "RATE_LIMITED", message: "Too many join attempts. Slow down." } },
 });
 
+// Execution hits an external paid/rate-limited service, so keep this
+// tighter than general API traffic — enough for iterative debugging
+// without allowing a tight loop to hammer the free execution service.
+export const runCodeLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { code: "RATE_LIMITED", message: "Too many runs. Wait a moment before running again." } },
+});
+
 // General API traffic ceiling.
 export const generalLimiter = rateLimit({
   windowMs: 60 * 1000,

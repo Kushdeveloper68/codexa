@@ -34,15 +34,15 @@ export default function ErrorState({ type = "error", message, onRetry }) {
   const preset = PRESETS[type] || PRESETS.error;
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-margin-desktop text-center min-h-[60vh]">
+    <div className="flex-1 flex flex-col items-center justify-center p-margin-mobile md:p-margin-desktop text-center min-h-[60vh]">
       <div className="w-16 h-16 rounded-full bg-error-container text-error flex items-center justify-center mb-6">
         <span className="material-symbols-outlined text-3xl">{preset.icon}</span>
       </div>
-      <h1 className="font-headline-lg text-headline-lg text-on-background mb-2">{preset.title}</h1>
+      <h1 className="font-headline-lg text-[22px] md:text-headline-lg text-on-background mb-2">{preset.title}</h1>
       <p className="font-body-lg text-body-lg text-on-surface-variant mb-8 max-w-md">
         {message || preset.message}
       </p>
-      <div className="flex gap-4">
+      <div className="flex gap-3 md:gap-4 flex-wrap justify-center">
         {onRetry && <Button variant="secondary" onClick={onRetry} icon="refresh">Try Again</Button>}
         <Button variant="primary" onClick={() => navigate("/")} icon="home">Go Home</Button>
       </div>

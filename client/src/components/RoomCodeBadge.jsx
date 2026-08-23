@@ -31,14 +31,14 @@ export default function RoomCodeBadge({ code, size = "lg" }) {
   }
 
   return (
-    <div className="flex items-center gap-4">
-      <span className="font-display-room-code text-display-room-code tracking-wider text-primary">
+    <div className="flex items-center gap-3 md:gap-4">
+      <span className="font-display-room-code text-[32px] md:text-display-room-code tracking-wider text-primary break-all">
         {code}
       </span>
       <button
         onClick={handleCopy}
         aria-label="Copy Room Code"
-        className="bg-surface hover:bg-surface-container transition-colors border border-outline-variant text-on-surface p-3 rounded-DEFAULT flex items-center justify-center"
+        className="bg-surface hover:bg-surface-container transition-colors border border-outline-variant text-on-surface p-2.5 md:p-3 rounded-DEFAULT flex items-center justify-center shrink-0"
       >
         <span className="material-symbols-outlined">{copied ? "check" : "content_copy"}</span>
       </button>

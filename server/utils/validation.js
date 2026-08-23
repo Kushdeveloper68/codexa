@@ -47,6 +47,12 @@ export const submitCodeSchema = z.object({
   code: z.string().max(200000),
 });
 
+export const runCodeSchema = z.object({
+  questionId: z.string().min(1),
+  code: z.string().max(200000),
+  stdin: z.string().max(20000).optional().default(""),
+});
+
 export const activityEventSchema = z.object({
   eventType: z.enum([
     "PAGE_HIDDEN",

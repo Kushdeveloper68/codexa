@@ -5,6 +5,7 @@ import StatusBadge from "../components/StatusBadge";
 import SummaryCards from "../components/SummaryCards";
 import StudentTable from "../components/StudentTable";
 import ActivityFeed from "../components/ActivityFeed";
+import RunsFeed from "../components/RunsFeed";
 import StudentDetailPanel from "../components/StudentDetailPanel";
 import Timer from "../components/Timer";
 import ErrorState from "../components/ErrorState";
@@ -20,6 +21,8 @@ export default function TeacherDashboardPage() {
   const { code } = useParams();
   const [data, setData] = useState(null);
   const [activityEvents, setActivityEvents] = useState([]);
+  const [codeRuns, setCodeRuns] = useState([]);
+  const [activeTab, setActiveTab] = useState("activity");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -76,6 +79,7 @@ export default function TeacherDashboardPage() {
     socket.on("test:start", refresh);
     socket.on("test:end", refresh);
     socket.on("activity:event", onActivity);
+    socket.on("code:run", (run) => setCodeRuns((prev) => [run, ...prev].slice(0, 50)));
 
     return () => {
       socket.off("student:joined", refresh);
@@ -87,6 +91,7 @@ export default function TeacherDashboardPage() {
       socket.off("test:start", refresh);
       socket.off("test:end", refresh);
       socket.off("activity:event", onActivity);
+      socket.off("code:run");
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, loadDashboard, selectedStudent]);
@@ -163,7 +168,7 @@ export default function TeacherDashboardPage() {
         <section className="flex-1 flex flex-col gap-gutter min-w-0">
           <div className="bg-surface-container-lowest border border-surface-variant rounded-lg p-4 md:p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 shadow-sm">
             <div className="flex flex-col gap-2 min-w-0">
-              <h1 className="font-headline-lg text-headline-lg text-on-surface break-words">{room.title}</h1>
+              <h1 className="font-headline-lg text-[22px] md:text-headline-lg text-on-surface break-words">{room.title}</h1>
               <div className="flex items-center gap-3 flex-wrap">
                 <StatusBadge status={room.status} />
                 <span className="text-secondary font-body-sm text-body-sm hidden sm:inline">|</span>
@@ -186,11 +191,11 @@ export default function TeacherDashboardPage() {
           <SummaryCards summary={summary} />
 
           <div className="bg-surface-container-lowest border border-surface-variant rounded-lg shadow-sm overflow-hidden">
-            <div className="px-6 py-3 border-b border-surface-variant flex items-center justify-between">
+            <div className="px-4 md:px-6 py-3 border-b border-surface-variant flex flex-wrap items-center justify-between gap-1">
               <h3 className="font-label-caps text-label-caps text-secondary">Students</h3>
               {lastUpdated && (
                 <span className="font-label-caps text-label-caps text-outline">
-                  Updated {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                  Updated {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </span>
               )}
             </div>
@@ -200,11 +205,27 @@ export default function TeacherDashboardPage() {
 
         <aside className="w-full md:w-80 flex flex-col gap-4">
           <div className="bg-surface-container-lowest border border-surface-variant rounded-lg flex flex-col h-[400px] md:h-[600px] shadow-sm md:sticky md:top-24">
-            <div className="px-5 py-4 border-b border-surface-variant bg-surface-bright flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-[20px]">sensors</span>
-              <h3 className="font-label-caps text-label-caps text-on-surface">Live Activity Feed</h3>
+            <div className="flex border-b border-surface-variant bg-surface-bright shrink-0">
+              <button
+                onClick={() => setActiveTab("activity")}
+                className={`flex-1 px-4 py-3 flex items-center justify-center gap-2 font-label-caps text-label-caps transition-colors ${
+                  activeTab === "activity" ? "text-primary border-b-2 border-primary" : "text-secondary"
+                }`}
+              >
+                <span className="material-symbols-outlined text-[18px]">sensors</span>
+                Activity
+              </button>
+              <button
+                onClick={() => setActiveTab("runs")}
+                className={`flex-1 px-4 py-3 flex items-center justify-center gap-2 font-label-caps text-label-caps transition-colors ${
+                  activeTab === "runs" ? "text-primary border-b-2 border-primary" : "text-secondary"
+                }`}
+              >
+                <span className="material-symbols-outlined text-[18px]">terminal</span>
+                Code Runs
+              </button>
             </div>
-            <ActivityFeed events={activityEvents} />
+            {activeTab === "activity" ? <ActivityFeed events={activityEvents} /> : <RunsFeed runs={codeRuns} />}
           </div>
         </aside>
       </main>

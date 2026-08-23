@@ -15,6 +15,7 @@ export const testService = {
   results: (code) => api.get(`/test/${code}/results`),
   questions: (code) => api.get(`/test/${code}/questions`),
   save: (code, payload) => api.put(`/test/${code}/save`, payload),
+  run: (code, payload) => api.post(`/test/${code}/run`, payload),
   submit: (code) => api.post(`/test/${code}/submit`),
   activity: (code, payload) => api.post(`/test/${code}/activity`, payload),
   mySubmissions: (code) => api.get(`/test/${code}/my-submissions`),

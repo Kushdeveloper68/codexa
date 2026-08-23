@@ -46,24 +46,11 @@ export function useActivityMonitoring({ enabled, fullscreenRequired, onEvent }) 
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, [enabled, reportEvent]);
 
-  // Paste detection (best-effort; we still let the app function if the
-  // browser doesn't cooperate with preventDefault)
-  useEffect(() => {
-    if (!enabled) return;
-
-    const handlePaste = () => reportEvent("PASTE_ATTEMPT");
-    const handleCopy = () => reportEvent("COPY_ATTEMPT");
-    const handleCut = () => reportEvent("CUT_ATTEMPT");
-
-    document.addEventListener("paste", handlePaste);
-    document.addEventListener("copy", handleCopy);
-    document.addEventListener("cut", handleCut);
-    return () => {
-      document.removeEventListener("paste", handlePaste);
-      document.removeEventListener("copy", handleCopy);
-      document.removeEventListener("cut", handleCut);
-    };
-  }, [enabled, reportEvent]);
+  // Paste/copy/cut inside the code editor are detected at the Monaco
+  // editor level instead (see CodeEditorPanel) — Monaco's own clipboard
+  // service intercepts these before a generic document-level listener can
+  // reliably observe them, so duplicating a listener here would either
+  // double-count or silently miss events depending on the browser.
 
   // Print shortcut (best-effort deterrent, not a security boundary)
   useEffect(() => {

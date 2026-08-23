@@ -15,7 +15,7 @@ export default function RoomCreatedPage() {
           <div className="w-16 h-16 rounded-full bg-primary-fixed text-primary flex items-center justify-center mb-4">
             <span className="material-symbols-outlined text-4xl">check_circle</span>
           </div>
-          <h1 className="font-headline-lg text-headline-lg text-center">Room Created Successfully</h1>
+          <h1 className="font-headline-lg text-[24px] md:text-headline-lg text-center px-2">Room Created Successfully</h1>
           <p className="font-body-lg text-body-lg text-secondary text-center mt-2">
             Share this code with your students to begin.
           </p>
