@@ -2,7 +2,7 @@ export const LANGUAGE_SNIPPETS = {
   JavaScript: `// Start coding together...
 
 function main() {
-  console.log("Hello, CodeClass!");
+  console.log("Hello, codexa!");
 }
 
 main();
@@ -10,7 +10,7 @@ main();
   Python: `# Start coding together...
 
 def main():
-    print("Hello, CodeClass!")
+    print("Hello, codexa!")
 
 if __name__ == "__main__":
     main()
@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("Hello, CodeClass!");
+        System.out.println("Hello, codexa!");
     }
 }
 `,
@@ -29,7 +29,7 @@ public class Main {
 using namespace std;
 
 int main() {
-    cout << "Hello, CodeClass!" << endl;
+    cout << "Hello, codexa!" << endl;
     return 0;
 }
 `,
@@ -38,7 +38,7 @@ int main() {
 #include <stdio.h>
 
 int main() {
-    printf("Hello, CodeClass!\\n");
+    printf("Hello, codexa!\\n");
     return 0;
 }
 `,

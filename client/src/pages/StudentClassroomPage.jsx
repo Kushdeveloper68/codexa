@@ -188,7 +188,7 @@ export default function StudentClassroomPage() {
         </div>
       )}
       <header className="bg-surface border-b border-surface-variant flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop h-14 md:h-16 shrink-0">
-        <Link to="/" className="font-headline-md text-headline-md font-bold text-primary">CodeClass</Link>
+        <Link to="/" className="font-headline-md text-headline-md font-bold text-primary">codexa</Link>
       </header>
 
       <main className="flex-1 flex overflow-hidden relative">

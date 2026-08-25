@@ -13,7 +13,7 @@ export default function Navbar({ active = "" }) {
       <div className="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop h-16 max-w-container-max mx-auto">
         <Link to="/" className="font-headline-md text-headline-md font-bold text-primary flex items-center gap-2">
           <span className="material-symbols-outlined">terminal</span>
-          CodeClass
+          codexa
         </Link>
         <div className="hidden md:flex gap-8">
           <a className={linkClass("classroom")} href="#">Classroom</a>

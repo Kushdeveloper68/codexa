@@ -66,7 +66,7 @@ export default function JoinRoomPage() {
       <header className="w-full h-16 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-unit max-w-container-max mx-auto border-b border-surface-variant bg-surface">
         <Link to="/" className="font-headline-md text-headline-md font-bold text-primary flex items-center gap-2">
           <span className="material-symbols-outlined">terminal</span>
-          CodeClass
+          codexa
         </Link>
         <Link to="/" className="text-body-sm font-body-sm text-secondary hover:text-primary transition-colors flex items-center gap-1">
           <span className="material-symbols-outlined text-[18px]">arrow_back</span> Cancel
@@ -147,8 +147,8 @@ export default function JoinRoomPage() {
       </main>
 
       <footer className="bg-surface-container-low border-t border-surface-variant w-full py-8 px-margin-mobile md:px-margin-desktop flex flex-col md:flex-row justify-between items-center max-w-container-max mx-auto mt-auto">
-        <div className="font-headline-md text-headline-md text-primary mb-4 md:mb-0">CodeClass</div>
-        <div className="font-body-sm text-body-sm text-secondary">© 2026 CodeClass. All rights reserved.</div>
+        <div className="font-headline-md text-headline-md text-primary mb-4 md:mb-0">codexa</div>
+        <div className="font-body-sm text-body-sm text-secondary">© 2026 codexa. All rights reserved.</div>
       </footer>
     </div>
   );

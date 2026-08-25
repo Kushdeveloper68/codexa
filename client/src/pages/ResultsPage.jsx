@@ -30,7 +30,7 @@ export default function ResultsPage() {
   return (
     <div className="bg-background min-h-screen flex flex-col font-body-sm">
       <header className="bg-surface border-b border-surface-variant flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop h-16">
-        <Link to="/" className="font-headline-md text-headline-md font-bold text-primary">CodeClass</Link>
+        <Link to="/" className="font-headline-md text-headline-md font-bold text-primary">codexa</Link>
       </header>
       <main className="max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-6 md:py-gutter">
         <div className="mb-6 md:mb-8">

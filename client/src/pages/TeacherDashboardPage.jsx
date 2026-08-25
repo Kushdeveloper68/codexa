@@ -157,7 +157,7 @@ export default function TeacherDashboardPage() {
   return (
     <div className="bg-surface text-on-surface font-body-sm min-h-screen flex flex-col">
       <header className="bg-surface border-b border-surface-variant flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop h-16">
-        <Link to="/" className="font-headline-md text-headline-md font-bold text-primary">CodeClass</Link>
+        <Link to="/" className="font-headline-md text-headline-md font-bold text-primary">codexa</Link>
         <div className="flex items-center gap-2 text-secondary font-label-caps text-label-caps">
           <span className={`w-1.5 h-1.5 rounded-full ${socket.connected ? "bg-emerald-500" : "bg-error"} animate-pulse`} />
           {socket.connected ? "Live" : "Reconnecting..."}
