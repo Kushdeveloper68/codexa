@@ -7,10 +7,15 @@ import { registerClassroomHandlers } from "./classroomHandlers.js";
 import { registerTestHandlers } from "./testHandlers.js";
 
 /**
- * Teacher identity for sockets is never trusted from a client-sent payload
- * (a student could just send someone else's token if we did). Instead we
- * read the httpOnly teacher_<code> cookie straight from the raw handshake
- * headers, the same cookie the browser already attaches to REST calls.
+ * Teacher identity for sockets is verified against the DB either way —
+ * this just decides which raw token to check. Preferred: the client now
+ * sends its stored teacherToken directly in the room:join payload (see
+ * roomController — the token is returned in the create-room response
+ * body specifically so the client can do this). Falling back to reading
+ * the httpOnly teacher_<code> cookie from the handshake still works for
+ * local dev, but cross-site cookies are unreliable in production
+ * (browsers increasingly block them by default, e.g. Chrome Incognito),
+ * so the payload path is what actually works once deployed.
  */
 function getTeacherTokenFromHandshake(socket, roomCode) {
   const rawCookie = socket.handshake.headers?.cookie;
@@ -40,13 +45,15 @@ export function registerSocketHandlers(io) {
 
     socket.on("room:join", async (payload, ack) => {
       try {
-        const { roomCode, studentSessionId, asTeacher } = payload || {};
+        const { roomCode, studentSessionId, asTeacher, teacherToken: payloadTeacherToken } = payload || {};
         if (!roomCode) return ack?.({ error: "roomCode required" });
 
         const room = await Room.findOne({ code: String(roomCode).toUpperCase() });
         if (!room) return ack?.({ error: "Room not found" });
 
-        const teacherToken = asTeacher ? getTeacherTokenFromHandshake(socket, room.code) : null;
+        const teacherToken = asTeacher
+          ? payloadTeacherToken || getTeacherTokenFromHandshake(socket, room.code)
+          : null;
 
         if (!room.isJoinable() && !teacherToken) {
           return ack?.({ error: "Room is not currently active" });

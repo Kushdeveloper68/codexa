@@ -93,6 +93,12 @@ export const createTestRoom = asyncHandler(async (req, res) => {
       questionCount: questions.length,
       expiresAt: room.expiresAt,
     },
+    // Also returned in the body (not just the cookie) so the client can
+    // store it and send it back as an X-Teacher-Token header — necessary
+    // because cross-site cookies (frontend and backend on different
+    // domains) are unreliable across browsers, especially in private/
+    // incognito modes. See requireTeacher.js for why.
+    teacherToken: rawToken,
   });
 });
 
@@ -150,6 +156,8 @@ export const createClassroom = asyncHandler(async (req, res) => {
       sessionId: creatorStudentSession.sessionId,
       name: creatorStudentSession.name,
     },
+    // See createTestRoom for why this is also returned in the body.
+    teacherToken: rawToken,
   });
 });
 
