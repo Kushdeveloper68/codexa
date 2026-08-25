@@ -31,6 +31,14 @@ const io = new SocketIOServer(httpServer, {
 // without introducing a circular import.
 app.set("io", io);
 
+// Render (and most PaaS hosts) put the app behind a reverse proxy, which
+// adds an X-Forwarded-For header. Without trusting the proxy, express-
+// rate-limit refuses every request in production (and req.ip would be the
+// proxy's IP for everyone, breaking IP-based rate limiting anyway).
+if (process.env.NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+}
+
 app.use(helmet());
 app.use(cors({ origin: CLIENT_URL, credentials: true }));
 app.use(express.json({ limit: "1mb" }));

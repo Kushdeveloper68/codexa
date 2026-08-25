@@ -24,10 +24,18 @@ async function uniqueRoomCode() {
 }
 
 function teacherCookieOptions() {
+  // In production the frontend (Vercel) and backend (Render) live on
+  // different domains, so the cookie is cross-site from the browser's
+  // point of view. "lax" cookies are NOT sent on cross-site fetch/XHR
+  // requests — only "none" (which browsers require to be paired with
+  // "secure") works here. Locally, frontend and backend are on
+  // different ports of the same host, which browsers treat as
+  // same-site, so "lax" is fine (and doesn't require HTTPS on localhost).
+  const isProd = process.env.NODE_ENV === "production";
   return {
     httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    sameSite: isProd ? "none" : "lax",
+    secure: isProd,
     maxAge: ROOM_EXPIRY_HOURS * 60 * 60 * 1000,
     path: "/",
   };
@@ -170,10 +178,11 @@ export const getRoom = asyncHandler(async (req, res) => {
 
 function studentCookieOptions(room) {
   const ttlMs = Math.max(room.expiresAt.getTime() - Date.now(), 60 * 1000);
+  const isProd = process.env.NODE_ENV === "production";
   return {
     httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    sameSite: isProd ? "none" : "lax",
+    secure: isProd,
     maxAge: ttlMs,
     path: "/",
   };
