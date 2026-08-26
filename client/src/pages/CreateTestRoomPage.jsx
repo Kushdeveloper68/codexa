@@ -5,6 +5,7 @@ import Footer from "../components/Footer";
 import Button from "../components/Button";
 import { Input, Textarea, Select } from "../components/FormControls";
 import { roomService } from "../services/roomService";
+import { saveTeacherToken } from "../utils/localSession";
 
 const LANGUAGES = ["C", "C++", "Java", "Python", "JavaScript"];
 
@@ -46,7 +47,7 @@ export default function CreateTestRoomPage() {
 
     setSubmitting(true);
     try {
-      const { room } = await roomService.createTestRoom({
+      const { room, teacherToken } = await roomService.createTestRoom({
         teacherName,
         title,
         language,
@@ -54,6 +55,7 @@ export default function CreateTestRoomPage() {
         questions: questions.map((q) => ({ title: q.title, description: q.description })),
         settings,
       });
+      saveTeacherToken(room.code, teacherToken);
       navigate(`/create/test/${room.code}/created`, { state: { room } });
     } catch (err) {
       setApiError(err.message || "Could not create room. Please try again.");

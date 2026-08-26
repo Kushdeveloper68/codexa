@@ -40,7 +40,16 @@ if (process.env.NODE_ENV === "production") {
 }
 
 app.use(helmet());
-app.use(cors({ origin: CLIENT_URL, credentials: true }));
+app.use(
+  cors({
+    origin: CLIENT_URL,
+    credentials: true,
+    // Explicitly allow the custom auth headers the client sends
+    // (X-Student-Session, X-Teacher-Token) — without this, the browser's
+    // CORS preflight rejects them before the request ever reaches a route.
+    allowedHeaders: ["Content-Type", "X-Student-Session", "X-Teacher-Token"],
+  })
+);
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 app.use(mongoSanitize());

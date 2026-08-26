@@ -5,7 +5,7 @@ import Footer from "../components/Footer";
 import Button from "../components/Button";
 import { Input, Select } from "../components/FormControls";
 import { roomService } from "../services/roomService";
-import { saveSessionLocally } from "../utils/localSession";
+import { saveSessionLocally, saveTeacherToken } from "../utils/localSession";
 
 const LANGUAGES = ["JavaScript", "Python", "Java", "C++", "C"];
 
@@ -29,8 +29,9 @@ export default function CreateClassroomPage() {
 
     setSubmitting(true);
     try {
-      const { room, student } = await roomService.createClassroom({ teacherName, title, language });
+      const { room, student, teacherToken } = await roomService.createClassroom({ teacherName, title, language });
       saveSessionLocally(room.code, student);
+      saveTeacherToken(room.code, teacherToken);
       navigate(`/classroom/${room.code}`);
     } catch (err) {
       setApiError(err.message || "Could not create classroom. Please try again.");

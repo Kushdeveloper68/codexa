@@ -62,7 +62,7 @@ export function registerSocketHandlers(io) {
         let identity = null;
 
         if (asTeacher) {
-          if (!teacherToken) return ack?.({ error: "No teacher session cookie found" });
+          if (!teacherToken) return ack?.({ error: "No teacher session found" });
           const session = await TeacherSession.findOne({
             roomId: room._id,
             tokenHash: hashToken(teacherToken),
